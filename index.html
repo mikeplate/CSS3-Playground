@@ -17,13 +17,18 @@ body, input, textarea, select {
 	font-family: Calibri, sans-serif;
 	font-size: 12pt;
 }
+.tundra .dijitMenuItem {
+	font-family: Calibri, sans-serif;
+	font-size: 12pt;
+	border-bottom: solid 1px #DDD;
+}
 h1 {
 	font-size: 12pt;
 	font-weight: bold;
 	padding-left: 5px;
 }
 p.desc {
-	font-size: 11pt;
+	font-size: 10pt;
 	margin-top: 0px;
 	margin-bottom: 6px;
 	padding-left: 5px;
@@ -66,23 +71,119 @@ div.fieldSlider {
 .tundra .dijitAccordionContainer-dijitContentPane {
 	padding-top: 0px;
 }
+div#buttonBar {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	padding: 3px;
+}
 </style>
 <script type="text/javascript">
+var boxUniqueId = 1;
+var allBoxes = new Array();
+
+function Box() {
+	var me = this;
+	this.BorderRadius = 0;
+	this.BorderRadiusSet = "";
+	
+	this.BoxShadowOffset = 0;
+	this.BoxShadowBlur = 0;
+	this.BoxShadowColor = "#000000";
+	this.BoxShadowSet = "";
+	
+	this.TextShadowOffset = 0;
+	this.TextShadowBlur = 0;
+	this.TextShadowColor = "#000000";
+	this.TextShadowSet = "";
+
+	this.TransformRotate = "0";
+	this.TransformScale = "1.0";
+	this.TransformSkew = "0";
+	this.TransformSkewY = "0";
+	this.TransformSet = "";
+	
+	this.BorderWidth = 0;
+	this.BorderColor = "#000000";
+	this.BorderSet = "";
+	
+	this.BackgroundColor = "#DDDDDD";
+	this.BackgroundSet = "";
+	
+	this.Padding = 0;
+	this.PaddingSet = "";
+
+	this.TextSize = 12;
+	this.TextFont = "Verdana, Geneva, sans-serif";
+	this.TextBold = false;
+	this.TextItalic = false;
+	this.TextColor = "#888888";
+	this.TextAlignment = "Center";
+	this.TextSet = "";
+	
+	this.Content = dojo.byId("contentText").value;
+	
+	var div = document.createElement("DIV");
+	div.id = "current" + boxUniqueId;
+	div.innerHTML = this.Content;
+	div.style.position = "absolute";
+	if (current==null) {
+		div.style.left = "100px";
+		div.style.top = "100px";
+		div.style.width = "300px";
+		div.style.height = "150px";
+	}
+	else {
+		div.style.left = (parseInt(current.Element.style.left)+20) + "px";
+		div.style.top = (parseInt(current.Element.style.top)+20) + "px";
+		div.style.width = current.Element.style.width;
+		div.style.height = current.Element.style.height;
+	}
+	div.style.cursor = "move";
+	div.style.zIndex = boxUniqueId;
+	dojo.query(div).connect("onmousedown", function() {
+		if (current != me) {
+			current = me;
+			SetControls(current);
+			Flash(current.Element);
+		}
+	});
+	dojo.byId("content").appendChild(div);
+	this.Element = div;
+	boxUniqueId++;
+
+	var moveable = new dojo.dnd.Moveable(this.Element);
+	moveable.onMoveStop = function(mover, leftTop) {
+		OutputSource();
+	}
+}
+
 var current = null;
-var borderSet = "";
-var backgroundSet = "";
-var paddingSet = "";
-var borderRadiusSet = "";
-var boxShadowSet = "";
-var transformSet = "";
-var textSet = "";
-var textShadowSet = "";
+var borderRadiusSlider;
+var boxShadowOffsetSlider;
+var boxShadowBlurSlider;
+var boxShadowColorPalette;
+var textShadowOffsetSlider;
+var textShadowBlurSlider;
+var textShadowColorPalette;
+var transformRotateSlider;
+var transformScaleSlider;
+var transformSkewSlider;
+var transformSkewYSlider;
+var borderWidthSlider;
+var borderColorPalette;
+var backgroundColorPalette;
+var paddingSlider;
+var textSizeSlider;
+var textColorPalette;
+var fontComboBox;
 
 dojo.require("dojo.parser");
 dojo.require("dijit.layout.ContentPane");
 dojo.require("dijit.layout.BorderContainer");
 dojo.require("dijit.layout.AccordionContainer");
 dojo.require("dijit.form.Slider");
+dojo.require("dijit.form.ComboBox");
 dojo.require("dijit.ColorPalette");
 dojo.require("dojo.dnd.move");
 dojo.require("dojox.layout.ResizeHandle");
@@ -91,63 +192,31 @@ dojo.addOnLoad(function () {
 	dojo.parser.parse();
 	dojo.animateProperty({ node: "container", properties: { opacity: 1.0 }, duration: 1000 }).play();
 	
-	setupSlider("borderRadius", 0, 50, UpdateBorderRadius);
-	setupSlider("boxShadowOffset", -50, 50, UpdateBoxShadow);
-	setupSlider("boxShadowBlur", 0, 50, UpdateBoxShadow);
-	setupColorPalette("boxShadowColor", UpdateBoxShadow);
-	setupSlider("textShadowOffset", -50, 50, UpdateTextShadow);
-	setupSlider("textShadowBlur", 0, 50, UpdateTextShadow);
-	setupColorPalette("textShadowColor", UpdateTextShadow);
-	setupSlider("transformRotate", -180, 180, UpdateTransform);
-	setupSlider("transformScale", 0, 5, UpdateTransform);
-	setupSlider("transformSkew", -80, 80, UpdateTransform);
-	setupSlider("transformSkewY", -80, 80, UpdateTransform);
-	setupSlider("borderWidth", 0, 50, UpdateBorder);
-	setupColorPalette("borderColor", UpdateBorder);
-	setupColorPalette("backgroundColor", UpdateBackground);
-	setupSlider("padding", 0, 50, UpdatePadding);
-	setupTextArea("contentText", UpdateContent);
-	setupSlider("size", 4, 50, UpdateText);
-	setupColorPalette("color", UpdateText);
-	
-	current = createBox();
-	var move = new dojo.dnd.Moveable("current");
-	move.onMoveStop = function(mover, leftTop) {
-		OutputSource();
-	}
-	var resize = new dojox.layout.ResizeHandle({
-		targetId:"current"
-	});
-	resize.activeResize = true;
-	resize.animateSizing = false;
-	resize.placeAt("current");
-	resize.onResize = function(ev) {
-		OutputSource();
-	}
-	
-	UpdateBorderRadius();
-	UpdateBoxShadow();
-	UpdateTextShadow();
-	UpdateTransform();
-	UpdateBorder();
-	UpdateBackground();
-	UpdatePadding();
-	UpdateText();
-	OutputSource();
-});
+	borderRadiusSlider = setupSlider("borderRadius", 0, 50, UpdateBorderRadius);
+	boxShadowOffsetSlider = setupSlider("boxShadowOffset", -50, 50, UpdateBoxShadow);
+	boxShadowBlurSlider = setupSlider("boxShadowBlur", 0, 50, UpdateBoxShadow);
+	boxShadowColorPalette = setupColorPalette("boxShadowColor", UpdateBoxShadow);
+	textShadowOffsetSlider = setupSlider("textShadowOffset", -50, 50, UpdateTextShadow);
+	textShadowBlurSlider = setupSlider("textShadowBlur", 0, 50, UpdateTextShadow);
+	textShadowColorPalette = setupColorPalette("textShadowColor", UpdateTextShadow);
+	transformRotateSlider = setupSlider("transformRotate", -180, 180, UpdateTransform);
+	transformScaleSlider = setupSlider("transformScale", 0, 5, UpdateTransform);
+	transformSkewSlider = setupSlider("transformSkew", -80, 80, UpdateTransform);
+	transformSkewYSlider = setupSlider("transformSkewY", -80, 80, UpdateTransform);
+	borderWidthSlider = setupSlider("borderWidth", 0, 50, UpdateBorder);
+	borderColorPalette = setupColorPalette("borderColor", UpdateBorder);
+	backgroundColorPalette = setupColorPalette("backgroundColor", UpdateBackground);
+	paddingSlider = setupSlider("padding", 0, 50, UpdatePadding);
+	setupText("contentText", UpdateContent);
+	textSizeSlider = setupSlider("size", 4, 50, UpdateText);
+	textColorPalette = setupColorPalette("color", UpdateText);
+	fontComboBox = setupComboBox("fontText", UpdateText);
+	setupCheckBox("boldText", UpdateText);
+	setupCheckBox("italicText", UpdateText);
 
-function createBox() {
-	var div = document.createElement("DIV");
-	div.id = "current";
-	div.innerHTML = dojo.byId("contentText").innerHTML;
-	div.style.position = "absolute";
-	div.style.left = "100px";
-	div.style.top = "100px";
-	div.style.width = "300px";
-	div.style.height = "150px";
-	div.style.backgroundColor = "#DDD";
-	dojo.byId("content").appendChild(div);
-}
+	AddBox();
+	RefreshButtons();
+});
 
 function setupSlider(baseName, minValue, maxValue, updateFunc) {
 	var textEl = dojo.byId(baseName + "Text");
@@ -161,7 +230,8 @@ function setupSlider(baseName, minValue, maxValue, updateFunc) {
 	}
 	var defaultValue = parseInt(textEl.value);
 
-	new dijit.form.HorizontalSlider({
+	dojo.query("#" + baseName + "Text").connect("onkeyup", updateFunc);
+	return new dijit.form.HorizontalSlider({
 		name: baseName+"SliderWidget",
 		value: defaultValue*scale,
 		minimum: minValue*scale,
@@ -174,46 +244,60 @@ function setupSlider(baseName, minValue, maxValue, updateFunc) {
 			updateFunc();
 		}
 	}, baseName + "Slider");
-	dojo.query("#" + baseName + "Text").connect("onkeyup", updateFunc);
 }
 
 function setupColorPalette(baseName, updateFunc) {
-	new dijit.ColorPalette({
+	dojo.query("#" + baseName + "Text").connect("onkeyup", updateFunc);
+	return new dijit.ColorPalette({
 		palette: "7x10",
 		onChange: function(value) {
 			dojo.byId(baseName + "Text").value = value.toUpperCase();
 			updateFunc();
 		}
 	}, baseName + "Palette");
-	dojo.query("#" + baseName + "Text").connect("onkeyup", updateFunc);
 }
 
-function setupTextArea(elementName, updateFunc) {
+function setupText(elementName, updateFunc) {
 	dojo.query("#" + elementName).connect("onkeyup", updateFunc);
 }
 
+function setupComboBox(elementName, updateFunc) {
+	return new dijit.form.ComboBox({
+		onChange: function() {
+			updateFunc();
+		},
+		onKeyUp: function() {
+			updateFunc();
+		}
+	}, elementName);
+}
+
+function setupCheckBox(elementName, updateFunc) {
+	dojo.query("#" + elementName).connect("onclick", updateFunc);
+}
+
 function OutputSource() {
-	var str = dojo.byId("current").getAttribute("style");
+	var str = current.Element.getAttribute("style");
 	str = str.replace(/; */g, ";<br />");
 	dojo.byId("htmlSource").innerHTML = str;
 
 	str = "";
-	if (borderRadiusSet.length > 0)
-		str += borderRadiusSet + ";<br />";
-	if (boxShadowSet.length > 0)
-		str += boxShadowSet + ";<br />";
-	if (textShadowSet.length > 0)
-		str += textShadowSet + ";<br />";
-	if (transformSet.length > 0)
-		str += transformSet + ";<br />";
-	if (textSet.length > 0)
-		str += textSet + ";<br />";
-	if (borderSet.length > 0)
-		str += borderSet + ";<br />";
-	if (backgroundSet.length > 0)
-		str += backgroundSet + ";<br />";
-	if (paddingSet.length > 0)
-		str += paddingSet + ";<br />";
+	if (current.BorderRadiusSet.length > 0)
+		str += current.BorderRadiusSet + ";<br />";
+	if (current.BoxShadowSet.length > 0)
+		str += current.BoxShadowSet + ";<br />";
+	if (current.TextShadowSet.length > 0)
+		str += current.TextShadowSet + ";<br />";
+	if (current.TransformSet.length > 0)
+		str += current.TransformSet + ";<br />";
+	if (current.BorderSet.length > 0)
+		str += current.BorderSet + ";<br />";
+	if (current.BackgroundSet.length > 0)
+		str += current.BackgroundSet + ";<br />";
+	if (current.PaddingSet.length > 0)
+		str += current.PaddingSet + ";<br />";
+	if (current.TextSet.length > 0)
+		str += current.TextSet + ";<br />";
 	dojo.byId("htmlSourceSet").innerHTML = str;
 }
 
@@ -222,18 +306,24 @@ function UpdateBorderRadius() {
 	var borderRadius = parseInt(dojo.byId("borderRadiusText").value);
 	if (borderRadius!=0) {
 		set = borderRadius + "px";
-		borderRadiusSet = "-webkit-border-radius: " + set + ";";
-		borderRadiusSet += "<br />-moz-border-radius: " + set + ";";
-		borderRadiusSet += "<br />border-radius: " + set;
+		current.BorderRadiusSet = "-webkit-border-radius: " + set + ";";
+		current.BorderRadiusSet += "<br />-moz-border-radius: " + set + ";";
+		current.BorderRadiusSet += "<br />border-radius: " + set;
 	}
 	else {
 		set = "";
-		borderRadiusSet = "";
+		current.BorderRadiusSet = "";
 	}
-	dojo.byId("current").style.WebkitBorderRadius = set;
-	dojo.byId("current").style.MozBorderRadius = set;
-	dojo.byId("current").style.borderRadius = set;
+	current.BorderRadius = borderRadius;
+	current.Element.style.WebkitBorderRadius = set;
+	current.Element.style.MozBorderRadius = set;
+	current.Element.style.borderRadius = set;
 	OutputSource();
+}
+
+function SetBorderRadius() {
+	dojo.byId("borderRadiusText").value = current.BorderRadius;
+	borderRadiusSlider.attr("value", current.BorderRadius);
 }
 
 function UpdateBoxShadow() {
@@ -243,18 +333,30 @@ function UpdateBoxShadow() {
 		var boxShadowBlur = parseInt(dojo.byId("boxShadowBlurText").value);
 		var boxShadowColor = dojo.byId("boxShadowColorText").value;
 		set = boxShadowOffset+"px "+boxShadowOffset+"px "+boxShadowBlur+"px " + boxShadowColor;
-		boxShadowSet = "-webkit-box-shadow: " + set + ";";
-		boxShadowSet += "<br />-moz-box-shadow: " + set + ";";
-		boxShadowSet += "<br />box-shadow: " + set;
+		current.BoxShadowSet = "-webkit-box-shadow: " + set + ";";
+		current.BoxShadowSet += "<br />-moz-box-shadow: " + set + ";";
+		current.BoxShadowSet += "<br />box-shadow: " + set;
+		current.BoxShadowBlur = boxShadowBlur;
+		current.BoxShadowColor = boxShadowColor;
 	}
 	else {
 		set = "";
-		boxShadowSet = "";
+		current.BoxShadowSet = "";
 	}
-	dojo.byId("current").style.WebkitBoxShadow = set;
-	dojo.byId("current").style.MozBoxShadow = set;
-	dojo.byId("current").style.boxShadow = set;
+	current.BoxShadowOffset = boxShadowOffset;
+	current.Element.style.WebkitBoxShadow = set;
+	current.Element.style.MozBoxShadow = set;
+	current.Element.style.boxShadow = set;
 	OutputSource();
+}
+
+function SetBoxShadow() {
+	dojo.byId("boxShadowOffsetText").value = current.BoxShadowOffset;
+	boxShadowOffsetSlider.attr("value", current.BoxShadowOffset);
+	dojo.byId("boxShadowBlurText").value = current.BoxShadowBlur;
+	boxShadowBlurSlider.attr("value", current.BoxShadowBlur);
+	dojo.byId("boxShadowColorText").value = current.BoxShadowColor;
+	boxShadowColorPalette.attr("value", current.BoxShadowColor);
 }
 
 function UpdateTextShadow() {
@@ -264,14 +366,93 @@ function UpdateTextShadow() {
 		var textShadowBlur = parseInt(dojo.byId("textShadowBlurText").value);
 		var textShadowColor = dojo.byId("textShadowColorText").value;
 		set = textShadowOffset+"px "+textShadowOffset+"px "+textShadowBlur+"px " + textShadowColor;
-		textShadowSet = "text-shadow: " + set;
+		current.TextShadowSet = "text-shadow: " + set;
+		current.TextShadowBlur = textShadowBlur;
+		current.TextShadowColor = textShadowColor;
 	}
 	else {
 		set = "";
-		textShadowSet = "";
+		current.TextShadowSet = "";
 	}
-	dojo.byId("current").style.textShadow = set;
+	current.TextShadowOffset = textShadowOffset;
+	current.Element.style.textShadow = set;
 	OutputSource();
+}
+
+function SetTextShadow() {
+	dojo.byId("textShadowOffsetText").value = current.TextShadowOffset;
+	textShadowOffsetSlider.attr("value", current.TextShadowOffset);
+	dojo.byId("textShadowBlurText").value = current.TextShadowBlur;
+	textShadowBlurSlider.attr("value", current.TextShadowBlur);
+	dojo.byId("textShadowColorText").value = current.TextShadowColor;
+	textShadowColorPalette.attr("value", current.TextShadowColor);
+}
+
+function UpdateTransform() {
+	var set = "";
+	var transformRotate = dojo.byId("transformRotateText").value;
+	if (transformRotate.length > 0 && transformRotate!="0") {
+		set = "rotate(" + transformRotate + "deg)";
+		current.TransformRotate = transformRotate;
+	}
+	else {
+		current.TransformRotate = 0;
+	}
+	var transformScale = dojo.byId("transformScaleText").value;
+	if (transformScale.length > 0 && transformScale!="1.0") {
+		if (set.length > 0)
+			set += " ";
+		set += "scale(" + parseFloat(transformScale) + ")";
+		current.TransformScale = transformScale;
+	}
+	else {
+		current.TransformScale = "1.0";
+	}
+	var transformSkew = dojo.byId("transformSkewText").value;
+	var transformSkewY = dojo.byId("transformSkewYText").value;
+	if ((transformSkew.length > 0 && transformSkew!="0") || (transformSkewY.length > 0 && transformSkewY!="0")) {
+		if (set.length > 0)
+			set += " ";
+		if ((transformSkew.length > 0 && transformSkew!="0") && (transformSkewY.length > 0 && transformSkewY!="0")) {
+			set += "skew(" + transformSkew + "deg," + transformSkewY + "deg)";
+			current.TransformSkew = transformSkew;
+			current.TransformSkewY = transformSkewY;
+		}
+		else if (transformSkew.length > 0 && transformSkew!="0") {
+			set += "skew(" + transformSkew + "deg)";
+			current.TransformSkew = transformSkew;
+			current.TransformSkewY = "0";
+		}
+		else {
+			set += "skewY(" + transformSkewY + "deg)";
+			current.TransformSkew = "0";
+			current.TransformSkewY = transformSkewY;
+		}
+	}
+	
+	current.Element.style.WebkitTransform = set;
+	current.Element.style.MozTransform = set;
+	current.Element.style.OTransform = set;
+	if (set.length > 0) {
+		current.TransformSet = "-webkit-transform: " + set + ";<br />";
+		current.TransformSet += "-moz-transform: " + set + ";<br />";
+		current.TransformSet += "-o-transform: " + set;
+	}
+	else {
+		current.TransformSet = "";
+	}
+	OutputSource();
+}
+
+function SetTransform() {
+	dojo.byId("transformRotateText").value = current.TransformRotate;
+	transformRotateSlider.attr("value", current.TransformRotate);
+	dojo.byId("transformScaleText").value = current.TransformScale;
+	transformScaleSlider.attr("value", parseFloat(current.TransformScale)*10);
+	dojo.byId("transformSkewText").value = current.TransformSkew;
+	transformSkewSlider.attr("value", current.TransformSkew);
+	dojo.byId("transformSkewYText").value = current.TransformSkewY;
+	transformSkewYSlider.attr("value", current.TransformSkewY);
 }
 
 function UpdateBorder() {
@@ -283,85 +464,36 @@ function UpdateBorder() {
 			dojo.byId("borderColorText").value = borderColor;
 		}
 		var set = borderWidth+"px solid "+borderColor;
-		dojo.byId("current").style.border = set;
-		borderSet = "border: " + set;
+		current.Element.style.border = set;
+		current.BorderSet = "border: " + set;
 	}
 	else {
-		dojo.byId("current").style.border = "";
-		borderSet = "";
+		current.Element.style.border = "";
+		current.BorderSet = "";
 	}
+	current.BorderWidth = borderWidth;
+	current.BorderColor = borderColor;
 	OutputSource();
+}
+
+function SetBorder() {
+	dojo.byId("borderWidthText").value = current.BorderWidth;
+	borderWidthSlider.attr("value", current.BorderWidth);
+	dojo.byId("borderColorText").value = current.BorderColor;
+	borderColorPalette.attr("value", current.BorderColor);
 }
 
 function UpdateBackground() {
 	var backgroundColor = dojo.byId("backgroundColorText").value;
-	dojo.byId("current").style.background = backgroundColor;
-	backgroundSet = "background: " + backgroundColor;
+	current.Element.style.background = backgroundColor;
+	current.BackgroundSet = "background: " + backgroundColor;
+	current.BackgroundColor = backgroundColor;
 	OutputSource();
 }
 
-function UpdateTransform() {
-	var set = "";
-	transformSet = "";
-
-	var transformRotate = dojo.byId("transformRotateText").value;
-	if (transformRotate.length > 0 && transformRotate!="0") {
-		set = "rotate(" + transformRotate + "deg)";
-	}
-	var transformScale = dojo.byId("transformScaleText").value;
-	if (transformScale.length > 0 && transformScale!="1.0") {
-		if (set.length > 0)
-			set += " ";
-		set += "scale(" + parseFloat(transformScale) + ")";
-	}
-	var transformSkew = dojo.byId("transformSkewText").value;
-	var transformSkewY = dojo.byId("transformSkewYText").value;
-	if ((transformSkew.length > 0 && transformSkew!="0") || (transformSkewY.length > 0 && transformSkewY!="0")) {
-		if (set.length > 0)
-			set += " ";
-		if ((transformSkew.length > 0 && transformSkew!="0") && (transformSkewY.length > 0 && transformSkewY!="0")) {
-			set += "skew(" + transformSkew + "deg," + transformSkewY + "deg)";
-		}
-		else if (transformSkew.length > 0 && transformSkew!="0") {
-			set += "skew(" + transformSkew + "deg)";
-		}
-		else {
-			set += "skewY(" + transformSkewY + "deg)";
-		}
-	}
-	
-	dojo.byId("current").style.WebkitTransform = set;
-	dojo.byId("current").style.MozTransform = set;
-	dojo.byId("current").style.OTransform = set;
-	if (set.length > 0) {
-		transformSet = "-webkit-transform: " + set + ";<br />";
-		transformSet += "-moz-transform: " + set + ";<br />";
-		transformSet += "-o-transform: " + set;
-	}
-	OutputSource();
-}
-
-function UpdateContent() {
-	dojo.byId("current").innerHTML = dojo.byId("contentText").value;
-}
-
-function UpdateText() {
-	var textSize = parseInt(dojo.byId("sizeText").value);
-	var textColor = dojo.byId("colorText").value;
-	var textAlign = dojo.byId("alignmentList").options[dojo.byId("alignmentList").selectedIndex].value.toLowerCase();
-	
-	var current = dojo.byId("current");
-	current.style.fontSize = textSize + "pt";
-	current.style.color = textColor;
-	current.style.textAlign = textAlign;
-	
-	var set;
-	set = "font-size: " + textSize + "pt;<br />";
-	set += "color: " + textColor + ";<br />";
-	set += "text-align: " + textAlign;
-	textSet = set;
-	
-	OutputSource();
+function SetBackground() {
+	dojo.byId("backgroundColorText").value = current.BackgroundColor;
+	backgroundColorPalette.attr("value", current.BackgroundColor);
 }
 
 function UpdatePadding() {
@@ -369,14 +501,153 @@ function UpdatePadding() {
 	var padding = parseInt(dojo.byId("paddingText").value);
 	if (padding != 0) {
 		set = padding + "px";
-		paddingSet = "padding: " + set;
+		current.PaddingSet = "padding: " + set;
 	}
 	else {
 		set = "";
-		paddingSet = "";
+		current.PaddingSet = "";
 	}
-	dojo.byId("current").style.padding = set;
+	current.Padding = padding;
+	current.Element.style.padding = set;
 	OutputSource();
+}
+
+function SetPadding() {
+	dojo.byId("paddingText").value = current.Padding;
+	paddingSlider.attr("value", current.Padding);
+}
+
+function UpdateText() {
+	var textSize = parseInt(dojo.byId("sizeText").value);
+	var textColor = dojo.byId("colorText").value;
+	var textAlign = dojo.byId("alignmentList").options[dojo.byId("alignmentList").selectedIndex].value;
+	var fontFamily = fontComboBox.attr("value");
+	var textBold = dojo.byId("boldText").checked;
+	var textItalic = dojo.byId("italicText").checked;
+	
+	var el = current.Element;
+	el.style.fontSize = textSize + "pt";
+	el.style.color = textColor;
+	el.style.textAlign = textAlign.toLowerCase();
+	if (fontFamily.length > 0)
+		el.style.fontFamily = fontFamily;
+	el.style.fontWeight = textBold ? "bold":"";
+	el.style.fontStyle = textItalic ? "italic":"";
+	
+	var set = "";
+	if (fontFamily.length > 0)
+		set += "font-family: " + fontFamily + ";<br />";
+	if (textBold)
+		set += "font-weight: bold;<br />";
+	if (textItalic)
+		set += "font-style: italic;<br />";
+	set += "font-size: " + textSize + "pt;<br />";
+	set += "color: " + textColor + ";<br />";
+	set += "text-align: " + textAlign.toLowerCase();
+	current.TextSet = set;
+	current.TextSize = textSize;
+	current.TextFont = fontFamily;
+	current.TextBold = textBold;
+	current.TextItalic = textItalic;
+	current.TextColor = textColor;
+	current.TextAlignment = textAlign;
+	
+	OutputSource();
+}
+
+function SetText() {
+	textSizeSlider.attr("value", current.TextSize);
+	fontComboBox.attr("value", current.TextFont);
+	dojo.byId("boldText").checked = current.TextBold;
+	dojo.byId("italicText").checked = current.TextItalic;
+	dojo.byId("colorText").value = current.TextColor;
+	var el = dojo.byId("alignmentList");
+	for (var optionIndex = 0; optionIndex < el.options.length && el.options[optionIndex].text!=current.TextAlignment; optionIndex++) ;
+	if (optionIndex < el.options.length)
+		el.selectedIndex = optionIndex;
+}
+
+function UpdateContent() {
+	current.Content = dojo.byId("contentText").value;
+	current.Element.firstChild.nodeValue = dojo.byId("contentText").value;
+}
+
+function SetContent() {
+	dojo.byId("contentText").value = current.Content;
+}
+
+function AddBox() {
+	current = new Box();
+	allBoxes.push(current);
+	
+	var resize = new dojox.layout.ResizeHandle({
+		targetId: current.Element.id
+	});
+	resize.activeResize = true;
+	resize.animateSizing = false;
+	resize.placeAt(current.Element.id);
+	resize.onResize = function(ev) {
+		OutputSource();
+	}
+	UpdatePreview();
+	RefreshButtons();
+}
+
+function UpdatePreview() {
+	UpdateBorderRadius();
+	UpdateBoxShadow();
+	UpdateTextShadow();
+	UpdateTransform();
+	UpdateBorder();
+	UpdateBackground();
+	UpdatePadding();
+	UpdateText();
+	OutputSource();
+}
+
+function DeleteBox() {
+	if (allBoxes.length==1)
+		return;
+	
+	current.Element.parentNode.removeChild(current.Element);
+	for (var pos = 0; pos < allBoxes.length && allBoxes[pos]!=current; pos++) ;
+	allBoxes.splice(pos, 1);
+	if (pos == allBoxes.length)
+		pos = allBoxes.length - 1;
+	current = allBoxes[pos];
+	SetControls(current);
+	RefreshButtons();
+	Flash(current.Element);
+}
+
+function SetControls(box) {
+	SetBorderRadius(box);
+	SetBoxShadow(box);
+	SetTextShadow(box);
+	SetTransform(box);
+	SetBorder(box);
+	SetBackground(box);
+	SetPadding(box);
+	SetText(box);
+	SetContent(box);
+	OutputSource();
+}
+
+function RefreshButtons() {
+	var btn = dojo.byId("deleteButton");
+	if (allBoxes.length<=1) {
+		btn.disabled = true;
+		btn.style.opacity = 0.5;
+	}
+	else {
+		btn.disabled = false;
+		btn.style.opacity = 1.0;
+	}
+}
+
+function Flash(el) {
+	el.style.opacity = 0.5;
+	dojo.animateProperty({ node: el, properties: { opacity: 1.0 }, duration: 500 }).play();
 }
 </script>
 </head>
@@ -439,10 +710,25 @@ function UpdatePadding() {
 				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="Content and Text">
 					<div class="fieldTitle">Content</div>
-					<div><textarea id="contentText" name="contentText" style="width: 90%; height: 150px;">Drag me around and use the controls to the left to change my appearance. Don't miss the extra panels at the bottom left.</textarea></div>
+					<div><textarea id="contentText" name="contentText" style="width: 90%; height: 150px;">Drag me around and use the controls to the left to change my appearance. Don't miss the extra panels at the bottom left. Add more of me with + button in upper right corner.</textarea></div>
 					<div class="fieldTitle">Text Size</div>
 					<div class="fieldNumber"><input id="sizeText" name="sizeText" type="text" style="width: 40px;" value="12" /></div>
 					<div class="fieldSlider" id="sizeSlider"></div>
+					<div class="fieldTitle">Font</div>
+					<!--div class="fieldList"><input id="fontText" name="fontText" type="text" style="width: 90%;" value="" /></div-->
+					<div class="fieldList">
+						<select id="fontText" name="fontText" style="width: 90%;">
+							<option>Verdana, Geneva, sans-serif</option>
+							<option>"Gill Sans", "Gill Sans MT", Calibri, sans-serif</option>
+							<option>Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif</option>
+							<option>"Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif</option>
+							<option>"Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif</option>
+						</select>
+					</div>
+					<div class="fieldList" style="padding-top: 4px;">
+						<input id="boldText" type="checkbox"> <label for="boldText">Bold</label>
+						<input id="italicText" type="checkbox"> <label for="italicText">Italic</label>
+					</div>
 					<div class="fieldTitle">Text Color</div>
 					<div class="fieldNumber"><input id="colorText" name="colorText" type="text" style="width: 100px;" value="#888888" /></div>
 					<div class="fieldPalette" id="colorPalette"></div>
@@ -458,9 +744,11 @@ function UpdatePadding() {
 				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="About">
 					<h1>CSS3 Playground</h1>
-					<h6>Version 1.0. Made by <a href="http://www.mikeplate.com">Mike Plate</a> <a href="http://twitter.com/mikeplate">@mikeplate</a></h6>
+					<h6>Version 1.1. Made by <a href="http://www.mikeplate.com">Mike Plate</a> <a href="http://twitter.com/mikeplate">@mikeplate</a></h6>
 					<h6>User interface made with <a href="http://www.dojotoolkit.org/">Dojo</a></h6>
 					<h6>Reference of CSS3 capabilites from <a href="http://www.caniuse.com/">Where can I use</a></h6>
+					<h6>Icons from <a href="http://www.fatcow.com/free-icons/index.bml">Farm-Fresh Web Icons</a></h6>
+					<h6>Font stacks selected from <a href="http://www.awayback.com/revised-font-stack/">A Way Back</a></h6>
 					<h6>No copyright. Use everything in any way you like.</h6>
 					<script type="text/javascript">
 						var flattr_url = 'http://css3.mikeplate.com';
@@ -497,6 +785,10 @@ function UpdatePadding() {
 			</div>
 		</div>
 		<div class="canvas" id="content" dojoType="dijit.layout.ContentPane" region="center" style="position: relative;">
+			<div id="buttonBar">
+				<input type="image" src="add.png" title="Add new preview box" onclick="AddBox();" />
+				<input id="deleteButton" type="image" src="delete.png" title="Delete selected preview box" onclick="DeleteBox();" /></a>
+			</div>
 		</div>
 		<div class="text" dojoType="dijit.layout.ContentPane" region="bottom" splitter="true">
 			<div style="float: left; width: 50%;">
