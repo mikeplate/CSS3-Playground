@@ -222,20 +222,25 @@ dojo.addOnLoad(function () {
 	dojo.parser.parse();
 	dojo.animateProperty({ node: "container", properties: { opacity: 1.0 }, duration: 1000 }).play();
 	
-	ZeroClipboard.setMoviePath("zeroclipboard/ZeroClipboard.swf");
-	var clip = new ZeroClipboard.Client();
-	clip.addEventListener("mouseDown", function(client) { 
-	    clip.setText(styleSource);
-    });
-	clip.glue("CopyToClipboard");
-	dojo.connect(window, "onresize", function() { 
-		clip.reposition();
-	});
-	var clipFlash = dojo.byId("ZeroClipboardMovie_1");
-	if (clipFlash) {
-		if (clipFlash.parentNode) {
-			clipFlash.parentNode.setAttribute("title", dojo.byId("CopyToClipboard").title);
+	if (navigator.mimeTypes && navigator.mimeTypes["application/x-shockwave-flash"]) {
+		ZeroClipboard.setMoviePath("zeroclipboard/ZeroClipboard.swf");
+		var clip = new ZeroClipboard.Client();
+		clip.addEventListener("mouseDown", function(client) { 
+		    clip.setText(styleSource);
+	    });
+		clip.glue("CopyToClipboard");
+		dojo.connect(window, "onresize", function() { 
+			clip.reposition();
+		});
+		var clipFlash = dojo.byId("ZeroClipboardMovie_1");
+		if (clipFlash) {
+			if (clipFlash.parentNode) {
+				clipFlash.parentNode.setAttribute("title", dojo.byId("CopyToClipboard").title);
+			}
 		}
+	}
+	else {
+		dojo.byId("CopyToClipboard").style.display = "none";
 	}
 	
 	borderRadiusSlider = setupSlider("borderRadius", 0, 50, UpdateBorderRadius);
@@ -371,7 +376,8 @@ function OutputSource() {
 function OutputBrowserStyle() {
 	if (!runningOpacityAnimation) {
 		var str = current.Element.getAttribute("style");
-		str = str.replace(/; */g, ";<br />");
+		if (str.replace)
+			str = str.replace(/; */g, ";<br />");
 		dojo.byId("htmlSource").innerHTML = str;
 	}
 }
@@ -878,11 +884,12 @@ function Flash(box) {
 				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="About">
 					<h1>CSS3 Playground</h1>
-					<h6>Version 1.1. Made by <a href="http://www.mikeplate.com">Mike Plate</a> <a href="http://twitter.com/mikeplate">@mikeplate</a></h6>
+					<h6>Version 1.2. Made by <a href="http://www.mikeplate.com">Mike Plate</a> <a href="http://twitter.com/mikeplate">@mikeplate</a></h6>
 					<h6>User interface made with <a href="http://www.dojotoolkit.org/">Dojo</a></h6>
-					<h6>Reference of CSS3 capabilites from <a href="http://www.caniuse.com/">Where can I use</a></h6>
+					<h6>Reference of CSS3 capabilites from <a href="http://www.caniuse.com/">Where can I use</a> and <a href="http://www.quirksmode.org/">QuirksMode</a></h6>
 					<h6>Icons from <a href="http://www.fatcow.com/free-icons/index.bml">Farm-Fresh Web Icons</a></h6>
 					<h6>Font stacks selected from <a href="http://www.awayback.com/revised-font-stack/">A Way Back</a></h6>
+					<h6>Clipboard copying with <a href="http://code.google.com/p/zeroclipboard/">Zero Clipboard</a></h6>
 					<h6>No copyright. Use everything in any way you like.</h6>
 					<script type="text/javascript">
 						var flattr_url = 'http://css3.mikeplate.com';
@@ -912,7 +919,7 @@ function Flash(box) {
 						browsers except Internet Explorer 8 and older versions of that browser.
 					</p>
 					<p class="desc">
-						Copy the styles under "Style as set with JavaScript" and paste inside your own html or css files to repeat the appearance for your own objects.
+						Copy the styles under "Style to use in html/css file" and paste inside your own html or css files to repeat the appearance for your own objects.
 						Please give feedback by commenting on the <a href="http://www.mikeplate.com/css3-playground/">blog post</a> about this application.
 					</p>
 				</div>
