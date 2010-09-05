@@ -4,6 +4,7 @@
 <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
 <title>CSS3 Playground by Mike Plate</title>
 <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojo/dojo.xd.js" type="text/javascript"></script>
+<script type="text/javascript" src="zeroclipboard/ZeroClipboard.js"></script>
 <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dijit/themes/tundra/tundra.css" />
 <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.5/dojox/layout/resources/ResizeHandle.css" />
 <meta property="fb:admins" content="621738122" />
@@ -14,11 +15,11 @@ html, body {
 	margin: 0px;
 }
 body, input, textarea, select {
-	font-family: Calibri, sans-serif;
+	font-family: Calibri, "Lucida Grande", sans-serif;
 	font-size: 12pt;
 }
 .tundra .dijitMenuItem {
-	font-family: Calibri, sans-serif;
+	font-family: Calibri, "Lucida Grande", sans-serif;
 	font-size: 12pt;
 	border-bottom: solid 1px #DDD;
 }
@@ -53,8 +54,10 @@ div.text {
 div.canvas {
 }
 div.toolTitle {
-	font-size: 14pt;
+	font-size: 12pt;
 	font-weight: bold;
+}
+div.styleSource {
 }
 div.fieldTitle {
 	clear: left;
@@ -81,6 +84,8 @@ div#buttonBar {
 <script type="text/javascript">
 var boxUniqueId = 1;
 var allBoxes = new Array();
+var styleSource = "";
+var runningOpacityAnimation = false;
 
 function Box() {
 	var me = this;
@@ -112,6 +117,10 @@ function Box() {
 	
 	this.Padding = 0;
 	this.PaddingSet = "";
+	this.Opacity = "1.0";
+	this.OpacitySet = "";
+	this.ZIndex = "0";
+	this.ZIndexSet = "";
 
 	this.TextSize = 12;
 	this.TextFont = "Verdana, Geneva, sans-serif";
@@ -140,12 +149,11 @@ function Box() {
 		div.style.height = current.Element.style.height;
 	}
 	div.style.cursor = "move";
-	div.style.zIndex = boxUniqueId;
 	dojo.query(div).connect("onmousedown", function() {
 		if (current != me) {
 			current = me;
 			SetControls(current);
-			Flash(current.Element);
+			Flash(current);
 		}
 	});
 	dojo.byId("content").appendChild(div);
@@ -155,7 +163,27 @@ function Box() {
 	var moveable = new dojo.dnd.Moveable(this.Element);
 	moveable.onMoveStop = function(mover, leftTop) {
 		OutputSource();
-	}
+	};
+	
+	var resize = new dojox.layout.ResizeHandle({
+		targetId: this.Element.id
+	});
+	resize.activeResize = true;
+	resize.animateSizing = false;
+	resize.placeAt(this.Element.id);
+	resize.onResize = function(ev) {
+		OutputSource();
+	};
+	var resizeDiv = div.childNodes[div.childNodes.length-1];
+	resizeDiv.style.visibility = "hidden";
+	dojo.connect(this.Element, "onmouseover", function() { 
+		var resizeDiv = div.childNodes[div.childNodes.length-1];
+		resizeDiv.style.visibility = "visible";
+	});
+	dojo.connect(this.Element, "onmouseout", function() { 
+		var resizeDiv = div.childNodes[div.childNodes.length-1];
+		resizeDiv.style.visibility = "hidden";
+	});
 }
 
 var current = null;
@@ -174,6 +202,8 @@ var borderWidthSlider;
 var borderColorPalette;
 var backgroundColorPalette;
 var paddingSlider;
+var opacitySlider;
+var zIndexSlider;
 var textSizeSlider;
 var textColorPalette;
 var fontComboBox;
@@ -192,6 +222,22 @@ dojo.addOnLoad(function () {
 	dojo.parser.parse();
 	dojo.animateProperty({ node: "container", properties: { opacity: 1.0 }, duration: 1000 }).play();
 	
+	ZeroClipboard.setMoviePath("zeroclipboard/ZeroClipboard.swf");
+	var clip = new ZeroClipboard.Client();
+	clip.addEventListener("mouseDown", function(client) { 
+	    clip.setText(styleSource);
+    });
+	clip.glue("CopyToClipboard");
+	dojo.connect(window, "onresize", function() { 
+		clip.reposition();
+	});
+	var clipFlash = dojo.byId("ZeroClipboardMovie_1");
+	if (clipFlash) {
+		if (clipFlash.parentNode) {
+			clipFlash.parentNode.setAttribute("title", dojo.byId("CopyToClipboard").title);
+		}
+	}
+	
 	borderRadiusSlider = setupSlider("borderRadius", 0, 50, UpdateBorderRadius);
 	boxShadowOffsetSlider = setupSlider("boxShadowOffset", -50, 50, UpdateBoxShadow);
 	boxShadowBlurSlider = setupSlider("boxShadowBlur", 0, 50, UpdateBoxShadow);
@@ -207,6 +253,8 @@ dojo.addOnLoad(function () {
 	borderColorPalette = setupColorPalette("borderColor", UpdateBorder);
 	backgroundColorPalette = setupColorPalette("backgroundColor", UpdateBackground);
 	paddingSlider = setupSlider("padding", 0, 50, UpdatePadding);
+	opacitySlider = setupSlider("opacity", 0, 1, UpdateOpacity);
+	zIndexSlider = setupSlider("zIndex", -10, 10, UpdateZIndex);
 	setupText("contentText", UpdateContent);
 	textSizeSlider = setupSlider("size", 4, 50, UpdateText);
 	textColorPalette = setupColorPalette("color", UpdateText);
@@ -230,8 +278,7 @@ function setupSlider(baseName, minValue, maxValue, updateFunc) {
 	}
 	var defaultValue = parseInt(textEl.value);
 
-	dojo.query("#" + baseName + "Text").connect("onkeyup", updateFunc);
-	return new dijit.form.HorizontalSlider({
+	var slider = new dijit.form.HorizontalSlider({
 		name: baseName+"SliderWidget",
 		value: defaultValue*scale,
 		minimum: minValue*scale,
@@ -244,6 +291,22 @@ function setupSlider(baseName, minValue, maxValue, updateFunc) {
 			updateFunc();
 		}
 	}, baseName + "Slider");
+	
+	dojo.query("#" + baseName + "Text").connect("onkeyup", function() {
+		if (textEl.value.length > 0) {
+			var value = null;
+			if (scale==1) {
+				value = parseInt(textEl.value);
+			}
+			if (value != null && !isNaN(value)) {
+				if (value >= slider.attr("minimum") && value <= slider.attr("maximum"))
+					slider.attr("value", value);
+				updateFunc();
+			} 
+		}
+	});
+	
+	return slider;
 }
 
 function setupColorPalette(baseName, updateFunc) {
@@ -277,28 +340,40 @@ function setupCheckBox(elementName, updateFunc) {
 }
 
 function OutputSource() {
-	var str = current.Element.getAttribute("style");
-	str = str.replace(/; */g, ";<br />");
-	dojo.byId("htmlSource").innerHTML = str;
-
-	str = "";
+	OutputBrowserStyle();
+	styleSource = "";
 	if (current.BorderRadiusSet.length > 0)
-		str += current.BorderRadiusSet + ";<br />";
+		styleSource += current.BorderRadiusSet + ";\r\n";
 	if (current.BoxShadowSet.length > 0)
-		str += current.BoxShadowSet + ";<br />";
+		styleSource += current.BoxShadowSet + ";\r\n";
 	if (current.TextShadowSet.length > 0)
-		str += current.TextShadowSet + ";<br />";
+		styleSource += current.TextShadowSet + ";\r\n";
 	if (current.TransformSet.length > 0)
-		str += current.TransformSet + ";<br />";
+		styleSource += current.TransformSet + ";\r\n";
 	if (current.BorderSet.length > 0)
-		str += current.BorderSet + ";<br />";
+		styleSource += current.BorderSet + ";\r\n";
 	if (current.BackgroundSet.length > 0)
-		str += current.BackgroundSet + ";<br />";
+		styleSource += current.BackgroundSet + ";\r\n";
 	if (current.PaddingSet.length > 0)
-		str += current.PaddingSet + ";<br />";
+		styleSource += current.PaddingSet + ";\r\n";
+	if (current.OpacitySet.length > 0)
+		styleSource += current.OpacitySet + ";\r\n";
+	if (current.ZIndexSet.length > 0)
+		styleSource += current.ZIndexSet + ";\r\n";
 	if (current.TextSet.length > 0)
-		str += current.TextSet + ";<br />";
-	dojo.byId("htmlSourceSet").innerHTML = str;
+		styleSource += current.TextSet + ";\r\n";
+		
+	var styleHtml = styleSource;
+	styleHtml = styleHtml.replace(/\r\n/g, "<br />");
+	dojo.byId("htmlSourceSet").innerHTML = styleHtml;
+}
+
+function OutputBrowserStyle() {
+	if (!runningOpacityAnimation) {
+		var str = current.Element.getAttribute("style");
+		str = str.replace(/; */g, ";<br />");
+		dojo.byId("htmlSource").innerHTML = str;
+	}
 }
 
 function UpdateBorderRadius() {
@@ -307,8 +382,8 @@ function UpdateBorderRadius() {
 	if (borderRadius!=0) {
 		set = borderRadius + "px";
 		current.BorderRadiusSet = "-webkit-border-radius: " + set + ";";
-		current.BorderRadiusSet += "<br />-moz-border-radius: " + set + ";";
-		current.BorderRadiusSet += "<br />border-radius: " + set;
+		current.BorderRadiusSet += "\r\n-moz-border-radius: " + set + ";";
+		current.BorderRadiusSet += "\r\nborder-radius: " + set;
 	}
 	else {
 		set = "";
@@ -329,13 +404,13 @@ function SetBorderRadius() {
 function UpdateBoxShadow() {
 	var set;
 	var boxShadowOffset = parseInt(dojo.byId("boxShadowOffsetText").value);
-	if (boxShadowOffset!=0) {
-		var boxShadowBlur = parseInt(dojo.byId("boxShadowBlurText").value);
+	var boxShadowBlur = parseInt(dojo.byId("boxShadowBlurText").value);
+	if (boxShadowOffset!=0 || boxShadowBlur!=0) {
 		var boxShadowColor = dojo.byId("boxShadowColorText").value;
 		set = boxShadowOffset+"px "+boxShadowOffset+"px "+boxShadowBlur+"px " + boxShadowColor;
 		current.BoxShadowSet = "-webkit-box-shadow: " + set + ";";
-		current.BoxShadowSet += "<br />-moz-box-shadow: " + set + ";";
-		current.BoxShadowSet += "<br />box-shadow: " + set;
+		current.BoxShadowSet += "\r\n-moz-box-shadow: " + set + ";";
+		current.BoxShadowSet += "\r\nbox-shadow: " + set;
 		current.BoxShadowBlur = boxShadowBlur;
 		current.BoxShadowColor = boxShadowColor;
 	}
@@ -362,8 +437,8 @@ function SetBoxShadow() {
 function UpdateTextShadow() {
 	var set;
 	var textShadowOffset = parseInt(dojo.byId("textShadowOffsetText").value);
-	if (textShadowOffset!=0) {
-		var textShadowBlur = parseInt(dojo.byId("textShadowBlurText").value);
+	var textShadowBlur = parseInt(dojo.byId("textShadowBlurText").value);
+	if (textShadowOffset!=0 || textShadowBlur!=0) {
 		var textShadowColor = dojo.byId("textShadowColorText").value;
 		set = textShadowOffset+"px "+textShadowOffset+"px "+textShadowBlur+"px " + textShadowColor;
 		current.TextShadowSet = "text-shadow: " + set;
@@ -434,8 +509,8 @@ function UpdateTransform() {
 	current.Element.style.MozTransform = set;
 	current.Element.style.OTransform = set;
 	if (set.length > 0) {
-		current.TransformSet = "-webkit-transform: " + set + ";<br />";
-		current.TransformSet += "-moz-transform: " + set + ";<br />";
+		current.TransformSet = "-webkit-transform: " + set + ";\r\n";
+		current.TransformSet += "-moz-transform: " + set + ";\r\n";
 		current.TransformSet += "-o-transform: " + set;
 	}
 	else {
@@ -517,6 +592,48 @@ function SetPadding() {
 	paddingSlider.attr("value", current.Padding);
 }
 
+function UpdateOpacity() {
+	var set;
+	var opacity = dojo.byId("opacityText").value;
+	if (opacity.length > 0 && opacity != "1.0" && opacity != "1") {
+		set = parseFloat(opacity);
+		current.OpacitySet = "opacity: " + set;
+	}
+	else {
+		set = "1.0";
+		current.OpacitySet = "";
+	}
+	current.Opacity = set;
+	current.Element.style.opacity = set;
+	OutputSource();
+}
+
+function SetOpacity() {
+	dojo.byId("opacityText").value = current.Opacity;
+	opacitySlider.attr("value", current.Opacity*10);
+}
+
+function UpdateZIndex() {
+	var set;
+	var zindex = parseInt(dojo.byId("zIndexText").value);
+	if (zindex != 0 && !isNaN(zindex)) {
+		set = zindex;
+		current.ZIndexSet = "z-index: " + set;
+	}
+	else {
+		set = "";
+		current.ZIndexSet = "";
+	}
+	current.ZIndex = set;
+	current.Element.style.zIndex = set;
+	OutputSource();
+}
+
+function SetZIndex() {
+	dojo.byId("zIndexText").value = current.ZIndex;
+	zIndexSlider.attr("value", current.ZIndex);
+}
+
 function UpdateText() {
 	var textSize = parseInt(dojo.byId("sizeText").value);
 	var textColor = dojo.byId("colorText").value;
@@ -536,13 +653,13 @@ function UpdateText() {
 	
 	var set = "";
 	if (fontFamily.length > 0)
-		set += "font-family: " + fontFamily + ";<br />";
+		set += "font-family: " + fontFamily + ";\r\n";
 	if (textBold)
-		set += "font-weight: bold;<br />";
+		set += "font-weight: bold;\r\n";
 	if (textItalic)
-		set += "font-style: italic;<br />";
-	set += "font-size: " + textSize + "pt;<br />";
-	set += "color: " + textColor + ";<br />";
+		set += "font-style: italic;\r\n";
+	set += "font-size: " + textSize + "pt;\r\n";
+	set += "color: " + textColor + ";\r\n";
 	set += "text-align: " + textAlign.toLowerCase();
 	current.TextSet = set;
 	current.TextSize = textSize;
@@ -580,15 +697,6 @@ function AddBox() {
 	current = new Box();
 	allBoxes.push(current);
 	
-	var resize = new dojox.layout.ResizeHandle({
-		targetId: current.Element.id
-	});
-	resize.activeResize = true;
-	resize.animateSizing = false;
-	resize.placeAt(current.Element.id);
-	resize.onResize = function(ev) {
-		OutputSource();
-	}
 	UpdatePreview();
 	RefreshButtons();
 }
@@ -601,6 +709,8 @@ function UpdatePreview() {
 	UpdateBorder();
 	UpdateBackground();
 	UpdatePadding();
+	UpdateOpacity();
+	UpdateZIndex();
 	UpdateText();
 	OutputSource();
 }
@@ -617,7 +727,7 @@ function DeleteBox() {
 	current = allBoxes[pos];
 	SetControls(current);
 	RefreshButtons();
-	Flash(current.Element);
+	Flash(current);
 }
 
 function SetControls(box) {
@@ -628,6 +738,8 @@ function SetControls(box) {
 	SetBorder(box);
 	SetBackground(box);
 	SetPadding(box);
+	SetOpacity(box);
+	SetZIndex(box);
 	SetText(box);
 	SetContent(box);
 	OutputSource();
@@ -645,9 +757,25 @@ function RefreshButtons() {
 	}
 }
 
-function Flash(el) {
-	el.style.opacity = 0.5;
-	dojo.animateProperty({ node: el, properties: { opacity: 1.0 }, duration: 500 }).play();
+function Flash(box) {
+	var el = box.Element;
+	var currentOpacity = parseFloat(box.Opacity);
+	runningOpacityAnimation = true;
+	if (currentOpacity==1.0) {
+		el.style.opacity = 0.5;
+		dojo.animateProperty({ node: el, properties: { opacity: 1.0 }, duration: 500, 
+			onEnd: function() { runningOpacityAnimation = false; el.style.opacity = null; } }).play();
+	}
+	else if (currentOpacity < 0.5) {
+		el.style.opacity = 1.0;
+		dojo.animateProperty({ node: el, properties: { opacity: currentOpacity }, duration: 500, 
+			onEnd: function() { runningOpacityAnimation = false; } }).play();
+	}
+	else {
+		el.style.opacity = 0.0;
+		dojo.animateProperty({ node: el, properties: { opacity: currentOpacity }, duration: 500, 
+			onEnd: function() { runningOpacityAnimation = false; } }).play();
+	}
 }
 </script>
 </head>
@@ -707,6 +835,12 @@ function Flash(el) {
 					<div class="fieldTitle">Padding</div>
 					<div class="fieldNumber"><input id="paddingText" name="paddingText" type="text" style="width: 40px;" value="10" /></div>
 					<div class="fieldSlider" id="paddingSlider"></div>
+					<div class="fieldTitle">Opacity (0.0 = fully transparent)</div>
+					<div class="fieldNumber"><input id="opacityText" name="opacityText" type="text" style="width: 40px;" value="1.0" /></div>
+					<div class="fieldSlider" id="opacitySlider"></div>
+					<div class="fieldTitle">Z-index (stacking order)</div>
+					<div class="fieldNumber"><input id="zIndexText" name="zIndexText" type="text" style="width: 40px;" value="0" /></div>
+					<div class="fieldSlider" id="zIndexSlider"></div>
 				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="Content and Text">
 					<div class="fieldTitle">Content</div>
@@ -792,12 +926,15 @@ function Flash(el) {
 		</div>
 		<div class="text" dojoType="dijit.layout.ContentPane" region="bottom" splitter="true">
 			<div style="float: left; width: 50%;">
-				<div class="toolTitle">Style as set with JavaScript</div>
-				<div id="htmlSourceSet"></div>
+				<div style="float: right; margin-right: 20px;">
+					<input id="CopyToClipboard" type="image" src="copy.png" title="Copy style instructions to clipboard" />
+				</div>
+				<div class="toolTitle">Style to use in html/css file</div>
+				<div class="styleSource" id="htmlSourceSet"></div>
 			</div>
-			<div style="float: left; width: 50%">
-				<div class="toolTitle">Style as read from browser</div>
-				<div id="htmlSource"></div>
+			<div style="float: left; width: 50%;">
+				<div class="toolTitle" title="Don't use these styles. They are only displayed as an indication of how the current browser interprets the styles.">Style as read from browser<superscript>*</superscript></div>
+				<div class="styleSource" id="htmlSource"></div>
 			</div>
 		</div>
 	</div>
