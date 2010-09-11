@@ -1,8 +1,17 @@
-This is a client side only web application. All code is currently contained in index.html.
+This is a client side only web application.
 
 Use this web application at http://css3.mikeplate.com
 
 Blog post describing the start of this project at http://www.mikeplate.com/css3-playground/
+
+Facebook Page for this project at http://www.facebook.com/pages/CSS3-Playground/148212521870878
+
+Version 1.3 (2010-??-??)
+
+- Changed Facebook Like-button to a Facebook Page instead of just the url.
+- JavaScript code change: Refactored the settings code into separate classes.
+- Moved styles into separate file style.css.
+- Moved box and settings code into separate file box-settings.js.
 
 Version 1.2 (2010-09-05)
 

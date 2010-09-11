@@ -1,0 +1,71 @@
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+}
+body, input, textarea, select {
+	font-family: Calibri, "Lucida Grande", sans-serif;
+	font-size: 12pt;
+}
+.tundra .dijitMenuItem {
+	font-family: Calibri, "Lucida Grande", sans-serif;
+	font-size: 12pt;
+	border-bottom: solid 1px #DDD;
+}
+h1 {
+	font-size: 12pt;
+	font-weight: bold;
+	padding-left: 5px;
+}
+p.desc {
+	font-size: 10pt;
+	margin-top: 0px;
+	margin-bottom: 6px;
+	padding-left: 5px;
+}
+h6 {
+	font-size: 9pt;
+	font-weight: normal;
+	font-style: italic;
+	margin-top: 0px;
+	margin-bottom: 6px;
+	padding-left: 5px;
+}
+div.body {
+	height: 100%;
+}
+div.toolbox {
+	width: 280px;
+}
+div.text {
+	height: 300px;
+}
+div.canvas {
+}
+div.toolTitle {
+	font-size: 12pt;
+	font-weight: bold;
+}
+div.styleSource {
+}
+div.fieldTitle {
+	clear: left;
+	margin-top: 8px;
+	border-top: 1px solid #DDD;
+}
+div.fieldNumber {
+	float: left;
+}
+div.fieldList {
+}
+div.fieldSlider {
+}
+.tundra .dijitAccordionContainer-dijitContentPane {
+	padding-top: 0px;
+}
+div#buttonBar {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	padding: 3px;
+}
