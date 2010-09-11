@@ -575,17 +575,38 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 			var set;
 			var fromColor = dojo.byId(this.ElementName + "FromColorText").value;
 			var toColor = dojo.byId(this.ElementName + "ToColorText").value;
-			if (dir.selectedIndex == 1) {
+			switch (dir.selectedIndex) {
+			case 1:
 				box.Element.style.backgroundImage = "-moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
 				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
 				set = "background-image: -moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
 				set += ";<br />background-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
-			}
-			else {
+				break;
+			case 2:
 				box.Element.style.backgroundImage = "-moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
 				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
 				set = "background-image: -moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
 				set += ";<br />background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				break;
+			case 3:
+				box.Element.style.backgroundImage = "-moz-linear-gradient(-45deg, " + fromColor + ", " + toColor + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				set = "background-image: -moz-linear-gradient(-45deg, " + fromColor + ", " + toColor + ")";
+				set += ";<br />background-image: -webkit-gradient(linear, left top, right bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				break;
+			case 4:
+				box.Element.style.backgroundImage = "-moz-linear-gradient(225deg, " + fromColor + ", " + toColor + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, right top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				set = "background-image: -moz-linear-gradient(225deg, " + fromColor + ", " + toColor + ")";
+				set += ";<br />background-image: -webkit-gradient(linear, right top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				break;
+			case 5:
+				box.Element.style.backgroundImage = "-moz-radial-gradient(center, ellipse, " + fromColor + ", " + toColor + ")";
+				var height = box.Element.offsetHeight;
+				box.Element.style.backgroundImage = "-webkit-gradient(radial, center center, 0, center center, " + height + ", color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				set = "background-image: -moz-radial-gradient(center, ellipse, " + fromColor + ", " + toColor + ")";
+				set += ";<br />background-image: -webkit-gradient(radial, center center, 0, center center, " + height + ", color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				break;
 			}
 			box.GradientSet = set;
 		}
