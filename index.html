@@ -67,6 +67,7 @@ dojo.addOnLoad(function () {
 	settings["opacity"] = new OpacitySetting("opacity", function() { return current; }, OutputSource);
 	settings["text"] = new TextSetting("text", function() { return current; }, OutputSource);
 	settings["content"] = new ContentSetting("content", function() { return current; }, OutputSource);
+	settings["gradient-bkgnd"] = new GradientBackgroundSetting("bkgnd", function() { return current; }, OutputSource);
 
 	AddBox();
 	RefreshButtons();
@@ -211,6 +212,22 @@ function Flash(box) {
 					<div class="fieldNumber"><input id="transformSkewYText" name="transformSkewYText" type="text" style="width: 40px;" value="0" /></div>
 					<div class="fieldSlider" id="transformSkewYSlider"></div>
 				</div>
+				<div dojoType="dijit.layout.AccordionPane" title="CSSx Gradient Background">
+					<div class="fieldTitle">Direction</div>
+					<div class="fieldList">
+						<select id="bkgndDirection" name="bkgndDirection">
+							<option selected="selected">None</option>
+							<option>Horizontal</option>
+							<option>Vertical</option>
+						</select>
+					</div>
+					<div class="fieldTitle">From Color</div>
+					<div class="fieldNumber"><input id="bkgndFromColorText" name="bkgndFromColorText" type="text" style="width: 100px;" value="#6666FF" /></div>
+					<div class="fieldPalette" id="bkgndFromColorPalette"></div>
+					<div class="fieldTitle">To Color</div>
+					<div class="fieldNumber"><input id="bkgndToColorText" name="bkgndToColorText" type="text" style="width: 100px;" value="#FFFF66" /></div>
+					<div class="fieldPalette" id="bkgndToColorPalette"></div>
+				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="Border and Background">
 					<div class="fieldTitle">Border Width</div>
 					<div class="fieldNumber"><input id="borderWidthText" name="borderWidthText" type="text" style="width: 40px;" value="0" /></div>
@@ -335,6 +352,6 @@ _gaq.push(['_trackPageview']);
 	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
 	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
-</script>	
+</script>
 </body>
 </html>

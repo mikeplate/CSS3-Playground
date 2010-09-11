@@ -321,8 +321,11 @@ function BackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegat
 	this.Update = function() {
 		var box = this.GetUpdateBox();
 		var backgroundColor = dojo.byId(this.ElementName + "ColorText").value;
-		box.Element.style.background = backgroundColor;
-		box.BackgroundSet = "background: " + backgroundColor;
+		box.Element.style.backgroundColor = backgroundColor;
+		if (backgroundColor.length > 0)
+			box.BackgroundSet = "background-color: " + backgroundColor;
+		else
+			box.BackgroundSet = "";
 		box.BackgroundColor = backgroundColor;
 		this.AfterUpdate(box);
 	}
@@ -550,6 +553,67 @@ function SingleNumberSetting(styleName, minValue, maxValue, unitSuffix, elementN
 	this.Slider = setupSlider(elementName, minValue, maxValue, function() { me.Update(); });
 }
 
+function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) {
+	this.ElementName = elementName;
+	this.GetUpdateBox = getUpdateBoxDelegate;
+	this.AfterUpdate = afterUpdateDelegate;
+	
+	this.Init = function(box) {
+		box.GradientDirection = "";
+		box.GradientFromColor = "#3333FF";
+		box.GradientToColor = "#FFFF33";
+		box.GradientSet = "";
+	}
+	
+	this.Update = function(isUserTriggered) {
+		var box = this.GetUpdateBox();
+		var dir = dojo.byId(this.ElementName + "Direction");
+		if (dir.selectedIndex == 0 && typeof(isUserTriggered)!="undefined" && isUserTriggered) {
+			dir.selectedIndex = 1;
+		}
+		if (dir.selectedIndex > 0) {
+			var set;
+			var fromColor = dojo.byId(this.ElementName + "FromColorText").value;
+			var toColor = dojo.byId(this.ElementName + "ToColorText").value;
+			if (dir.selectedIndex == 1) {
+				box.Element.style.backgroundImage = "-moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				set = "background-image: -moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
+				set += ";<br />background-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+			}
+			else {
+				box.Element.style.backgroundImage = "-moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				set = "background-image: -moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
+				set += ";<br />background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+			}
+			box.GradientSet = set;
+		}
+		else {
+			box.Element.style.backgroundImage = "";
+			box.GradientSet = "";
+		}
+		this.AfterUpdate(box);
+	}
+
+	this.Set = function(box) {
+		dojo.byId(this.ElementName + "ColorText").value = box.BackgroundColor;
+		this.ColorPalette.attr("value", box.BackgroundColor);
+	}
+	
+	this.ToStyle = function(box) {
+		if (box.GradientSet.length > 0)
+			return box.GradientSet + ";\r\n";
+		else
+			return "";
+	}
+
+	var me = this;
+	this.FromColorPalette = setupColorPalette(elementName + "FromColor", function() { me.Update(true); });
+	this.ToColorPalette = setupColorPalette(elementName + "ToColor", function() { me.Update(true); });
+	dojo.byId(elementName + "Direction").onchange = function() { me.Update(); };
+}
+
 function Box() {
 	var me = this;
 	
@@ -591,7 +655,9 @@ function Box() {
 	};
 	
 	var resize = new dojox.layout.ResizeHandle({
-		targetId: this.Element.id
+		targetId: this.Element.id,
+		minWidth: 5,
+		minHeight: 5
 	});
 	resize.activeResize = true;
 	resize.animateSizing = false;
