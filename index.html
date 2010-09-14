@@ -56,22 +56,26 @@ dojo.addOnLoad(function () {
 		dojo.byId("CopyToClipboard").style.display = "none";
 	}
 
-	settings["border-radius"] = new BorderRadiusSetting("borderRadius", function() { return current; }, OutputSource);
-	settings["box-shadow"] = new BoxShadowSetting("boxShadow", function() { return current; }, OutputSource);
-	settings["text-shadow"] = new TextShadowSetting("textShadow", function() { return current; }, OutputSource);
-	settings["transform"] = new TransformSetting("transform", function() { return current; }, OutputSource);
-	settings["border"] = new BorderSetting("border", function() { return current; }, OutputSource);
-	settings["background"] = new BackgroundSetting("background", function() { return current; }, OutputSource);
-	settings["padding"] = new SingleNumberSetting("padding", 0, 50, "px", "padding", function() { return current; }, OutputSource);
-	settings["z-index"] = new SingleNumberSetting("z-index", -10, 10, null, "zIndex", function() { return current; }, OutputSource);
-	settings["opacity"] = new OpacitySetting("opacity", function() { return current; }, OutputSource);
-	settings["text"] = new TextSetting("text", function() { return current; }, OutputSource);
-	settings["content"] = new ContentSetting("content", function() { return current; }, OutputSource);
-	settings["gradient-bkgnd"] = new GradientBackgroundSetting("bkgnd", function() { return current; }, OutputSource);
+	settings["border-radius"] = new BorderRadiusSetting("borderRadius", GetCurrent, OutputSource);
+	settings["box-shadow"] = new BoxShadowSetting("boxShadow", GetCurrent, OutputSource);
+	settings["text-shadow"] = new TextShadowSetting("textShadow", GetCurrent, OutputSource);
+	settings["transform"] = new TransformSetting("transform", GetCurrent, OutputSource);
+	settings["gradient-bkgnd"] = new GradientBackgroundSetting("bkgnd", GetCurrent, OutputSource);
+	settings["border"] = new BorderSetting("border", GetCurrent, OutputSource);
+	settings["background"] = new BackgroundSetting("background", GetCurrent, OutputSource);
+	settings["padding"] = new SingleNumberSetting("padding", 0, 50, "px", "padding", GetCurrent, OutputSource);
+	settings["z-index"] = new SingleNumberSetting("z-index", -10, 10, null, "zIndex", GetCurrent, OutputSource);
+	settings["opacity"] = new OpacitySetting("opacity", GetCurrent, OutputSource);
+	settings["text"] = new TextSetting("text", GetCurrent, OutputSource);
+	settings["content"] = new ContentSetting("content", GetCurrent, OutputSource);
 
 	AddBox();
 	RefreshButtons();
 });
+
+function GetCurrent() {
+	return current;
+}
 
 function OutputSource() {
 	OutputBrowserStyle();
@@ -81,11 +85,8 @@ function OutputSource() {
 		styleSource += settings[setting].ToStyle(current);
 	}
 	
-	if (current.TextSet.length > 0)
-		styleSource += current.TextSet + ";\r\n";
-		
 	var styleHtml = styleSource;
-	styleHtml = styleHtml.replace(/\r\n/g, "<br />");
+	styleHtml = "<p>" + styleHtml.replace(/\r\n/g, "</p><p>") + "</p>";
 	dojo.byId("htmlSourceSet").innerHTML = styleHtml;
 }
 
@@ -108,7 +109,7 @@ function AddBox() {
 
 function UpdatePreview() {
 	for (var setting in settings) {
-		settings[setting].Update();
+		settings[setting].Update(true);
 	}
 	OutputSource();
 }
@@ -213,6 +214,7 @@ function Flash(box) {
 					<div class="fieldSlider" id="transformSkewYSlider"></div>
 				</div>
 				<div dojoType="dijit.layout.AccordionPane" title="CSSx Gradient Background">
+					<h6>Not part of the CSS3 specification.</h6>
 					<div class="fieldTitle">Direction</div>
 					<div class="fieldList">
 						<select id="bkgndDirection" name="bkgndDirection">
@@ -221,7 +223,6 @@ function Flash(box) {
 							<option>Vertical</option>
 							<option>Diagonal from Top Left</option>
 							<option>Diagonal from Top Right</option>
-							<option>Radial</option>
 						</select>
 					</div>
 					<div class="fieldTitle">From Color</div>
@@ -290,17 +291,19 @@ function Flash(box) {
 						var flattr_url = 'http://css3.mikeplate.com';
 						var flattr_btn='compact';
 					</script>
-					<iframe src="http://www.facebook.com/plugins/likebox.php?id=148212521870878&amp;width=258&amp;connections=0&amp;stream=false&amp;header=false&amp;height=62" scrolling="no" frameborder="0" 
-						style="border:none; overflow:hidden; width:258px; height:62px;" allowTransparency="true"></iframe>
+					<iframe src="http://www.facebook.com/plugins/likebox.php?id=148212521870878&amp;width=258&amp;connections=0&amp;stream=false&amp;header=false&amp;height=68" scrolling="no" frameborder="0" 
+						style="border:none; overflow:hidden; width:258px; height:68px;" allowTransparency="true"></iframe>
 					<p class="desc">
 						<script src="http://api.flattr.com/button/load.js" type="text/javascript"></script>
-						<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+					</p>
+					<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+						<p class="desc">
 							<input type="hidden" name="cmd" value="_s-xclick">
 							<input type="hidden" name="hosted_button_id" value="VXT3AFKCB9VSE">
 							<input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
 							<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
-						</form>
-					</p>
+						</p>
+					</form>
 					<h6>Version 1.2. Made by <a href="http://www.mikeplate.com">Mike Plate</a> <a href="http://twitter.com/mikeplate">@mikeplate</a></h6>
 					<h6>User interface made with <a href="http://www.dojotoolkit.org/">Dojo</a></h6>
 					<h6>Reference of CSS3 capabilites from <a href="http://www.caniuse.com/">Where can I use</a> and <a href="http://www.quirksmode.org/">QuirksMode</a></h6>
@@ -308,7 +311,7 @@ function Flash(box) {
 					<h6>Font stacks selected from <a href="http://www.awayback.com/revised-font-stack/">A Way Back</a></h6>
 					<h6>Clipboard copying with <a href="http://code.google.com/p/zeroclipboard/">Zero Clipboard</a></h6>
 					<h6>No copyright. Use everything in any way you like.</h6>
-					<p class="desc" style="clear: both;">
+					<p class="desc">
 						Use this web application to experiment and learn about new css3 capabilities. The styles applied when changing the different settings
 						should follow the principles of progressive enhancements and will work in all browsers that support the setting.
 						Just change the settings and see how the rectangular box changes according to your changes. 
@@ -328,7 +331,7 @@ function Flash(box) {
 		<div class="canvas" id="content" dojoType="dijit.layout.ContentPane" region="center" style="position: relative;">
 			<div id="buttonBar">
 				<input type="image" src="add.png" title="Add new preview box" onclick="AddBox();" />
-				<input id="deleteButton" type="image" src="delete.png" title="Delete selected preview box" onclick="DeleteBox();" /></a>
+				<input id="deleteButton" type="image" src="delete.png" title="Delete selected preview box" onclick="DeleteBox();" />
 			</div>
 		</div>
 		<div class="text" dojoType="dijit.layout.ContentPane" region="bottom" splitter="true">
@@ -340,8 +343,8 @@ function Flash(box) {
 				<div class="styleSource" id="htmlSourceSet"></div>
 			</div>
 			<div style="float: left; width: 50%;">
-				<div class="toolTitle" title="Don't use these styles. They are only displayed as an indication of how the current browser interprets the styles.">Style as read from browser<superscript>*</superscript></div>
-				<div class="styleSource" id="htmlSource"></div>
+				<div class="toolTitle" style="padding-left: 5px;border-left: solid 1px #EEE;" title="Don't use these styles. They are only displayed as an indication of how the current browser interprets the styles.">Style as read from browser<superscript>*</superscript></div>
+				<div class="styleSource" style="padding-left: 5px;border-left: solid 1px #EEE;" id="htmlSource"></div>
 			</div>
 		</div>
 	</div>
