@@ -1,0 +1,50 @@
+= CSS3 Playground
+
+== Overview
+
+This is a client side only web application for trying out different css styles (css3 primarily), on a box in the form of a div tag.
+
+Use this web application live at http://css3.mikeplate.com
+
+Blog post describing the start of this project at http://www.mikeplate.com/css3-playground/
+
+Facebook Page for this project at http://www.facebook.com/pages/CSS3-Playground/148212521870878
+
+== Version 1.3 (2010-09-14)
+
+* Gradient background images (with css).
+* Changed Facebook Like-button to a Facebook Page instead of just the url.
+* JavaScript code change: Refactored the settings code into separate classes.
+* Moved styles into separate file style.css.
+* Moved box and settings code into separate file box-settings.js.
+
+== Version 1.2 (2010-09-05)
+
+* Output box-shadow and text-shadow even when shadow offset is zero.
+* Button to copy current styles to clipboard.
+* Opacity setting.
+* Z-index setting.
+* Update slider position when text box value changes.
+* Only show sizing handle (in lower right corner of box) when mouse is inside box.
+
+== Version 1.1 (2010-08-17)
+
+* Multiple boxes, buttons for adding and deleting.
+* Selection intelligence to show and update one (last clicked) of the boxes.
+* Font family, bold, italic and color setting.
+* Padding setting.
+
+== Version 1.0 (2010-07-24)
+
+* Immediate update of box (div tag) style settings when input controls changes.
+* Show settings as browser independent styles.
+* Show current styles as reported by the browser (browser specific styles).
+* Border radius setting.
+* Box shadow setting.
+* Text shadow setting.
+* Transform (scale, rotate, skew) settings.
+* Border and background settings.
+* Content.
+* Font size setting.
+* Text alignment setting.
+* About information with Facebook Like-button, Flattr-button and Paypal donate-button.
