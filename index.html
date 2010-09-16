@@ -32,6 +32,7 @@ dojo.require("dojo.dnd.move");
 dojo.require("dojox.layout.ResizeHandle");
 
 dojo.addOnLoad(function () {
+	window.setTimeout("EnsureVisible();", 1200);
 	dojo.parser.parse();
 	dojo.animateProperty({ node: "container", properties: { opacity: 1.0 }, duration: 1000 }).play();
 	
@@ -167,6 +168,11 @@ function Flash(box) {
 		dojo.animateProperty({ node: el, properties: { opacity: currentOpacity }, duration: 500, 
 			onEnd: function() { runningOpacityAnimation = false; } }).play();
 	}
+}
+
+function EnsureVisible() {
+	var el = dojo.byId("container");
+	el.style.opacity = 1;
 }
 </script>
 </head>
