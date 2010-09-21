@@ -638,6 +638,74 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 	dojo.byId(elementName + "Direction").onchange = function() { me.Update(); };
 }
 
+function OutlineSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) {
+	this.ElementName = elementName;
+	this.GetUpdateBox = getUpdateBoxDelegate;
+	this.AfterUpdate = afterUpdateDelegate;
+	
+	this.Init = function(box) {
+		box.OutlineWidth = 0;
+		box.OutlineColor = "#000000";
+		box.OutlineOffset = 0;
+		box.OutlineSet = "";
+	}
+	
+	this.Update = function() {
+		var box = this.GetUpdateBox();
+		var borderWidth = parseInt(dojo.byId(this.ElementName + "WidthText").value);
+		var borderColor = dojo.byId(this.ElementName + "ColorText").value;
+		if (borderWidth!=0 || borderColor.length>0) {
+			if (borderColor.length==0) {
+				borderColor = "#000000";
+				dojo.byId(this.ElementName + "ColorText").value = borderColor;
+			}
+			var set = borderWidth+"px solid "+borderColor;
+			box.Element.style.outline = set;
+			box.OutlineSet = "outline: " + set;
+			
+			var offset = parseInt(dojo.byId(this.ElementName + "OffsetText").value);
+			if (offset!=0) {
+				box.Element.style.outlineOffset = offset + "px";
+				box.OutlineSet += ";\r\noutline-offset: " + offset + "px";
+				box.OutlineOffset = offset;
+			}
+			else {
+				box.Element.style.outlineOffset = "";
+				box.OutlineOffset = 0;
+			}
+		}
+		else {
+			box.Element.style.outline = "";
+			box.Element.style.outlineOffset = "";
+			box.OutlineSet = "";
+		}
+		box.OutlineWidth = borderWidth;
+		box.OutlineColor = borderColor;
+		this.AfterUpdate(box);
+	}
+
+	this.Set = function(box) {
+		dojo.byId(this.ElementName + "WidthText").value = box.OutlineWidth;
+		this.WidthSlider.attr("value", box.OutlineWidth);
+		dojo.byId(this.ElementName + "OffsetText").value = box.OutlineOffset;
+		this.OffsetSlider.attr("value", box.OutlineOffset);
+		dojo.byId(this.ElementName + "ColorText").value = box.OutlineColor;
+		this.ColorPalette.attr("value", box.OutlineColor);
+	}
+	
+	this.ToStyle = function(box) {
+		if (box.OutlineSet.length > 0)
+			return box.OutlineSet + ";\r\n";
+		else
+			return "";
+	}
+
+	var me = this;
+	this.WidthSlider = setupSlider(elementName + "Width", 0, 50, function() { me.Update(); });
+	this.OffsetSlider = setupSlider(elementName + "Offset", 0, 50, function() { me.Update(); });
+	this.ColorPalette = setupColorPalette(elementName + "Color", function() { me.Update(); });
+}
+
 function Box() {
 	var me = this;
 	
