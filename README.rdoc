@@ -2,13 +2,23 @@
 
 == Overview
 
-This is a client side only web application for trying out different css styles (css3 primarily), on a box in the form of a div tag.
+This is a client side only web application for trying out different css styles.
+It was primarily created to demonstrate new css3 functionality and does now also support touch devices such as iPhone, iPad and Android browsers.
 
 Use this web application live at http://css3.mikeplate.com
 
 Blog post describing the start of this project at http://www.mikeplate.com/css3-playground/
 
 Facebook Page for this project at http://www.facebook.com/pages/CSS3-Playground/148212521870878
+
+== Version 1.4 (2010-10-02)
+
+* Outline setting: a border that does not affect the width/positioning of a box (prior to css3, but I got wind of it now).
+* Column setting: let the browser distribute the contents over columns automatically.
+* Gradient backgrounds: added setting for start and end position (relative) for the fill.
+* Touch support, so that sliders and moving the box can be done on touch devices/tablets like the iPad. (TouchProxy class in touch-helpers.js)
+* Touch support, so that panels that don't fit the height can be scrolled by touch-n-drag. (TouchScroller class in touch-helpers.js)
+* Removed "hidden size grip until mouseover" for touch supporting devices so that they too can resize by draging the grip.
 
 == Version 1.3 (2010-09-14)
 

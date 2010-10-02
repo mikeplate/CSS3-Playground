@@ -77,3 +77,9 @@ div#htmlSourceSet p {
 	margin-left: 20px;
 	text-indent: -20px;
 }
+div.box {
+	cursor: move;
+}
+div.box p {
+	margin-top: 0px;
+}

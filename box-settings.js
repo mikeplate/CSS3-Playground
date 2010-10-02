@@ -1,4 +1,23 @@
 var boxUniqueId = 1;
+var hasTouchSupport = typeof(document.ontouchstart)!="undefined" && document.addEventListener;
+
+function SetStyleForAll(box, name, set) {
+	var capName = name.substring(0, 1).toUpperCase() + name.substring(1);
+	var findHyphen = capName.indexOf("-");
+	while (findHyphen >= 0) {
+		capName = capName.substring(0, findHyphen) + capName.substring(findHyphen+1, findHyphen+2).toUpperCase() + capName.substring(findHyphen+2);
+		findHyphen = capName.indexOf("-");
+	}
+	
+	box.Element.style["Webkit" + capName] = set;
+	box.Element.style["Moz" + capName] = set;
+	box.Element.style[capName.substring(0, 1).toLowerCase() + capName.substring(1)] = set;
+	
+	var styleStr = "-webkit-" + name + ": " + set;
+	styleStr += ";\r\n-moz-" + name + ": " + set;
+	styleStr += ";\r\n" + name + ": " + set;
+	return styleStr;
+}
 
 function BorderRadiusSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) {
 	this.ElementName = elementName;
@@ -482,7 +501,7 @@ function ContentSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) 
 	this.Update = function() {
 		var box = this.GetUpdateBox();
 		box.Content = dojo.byId(this.ElementName + "Text").value;
-		box.Element.firstChild.nodeValue = dojo.byId(this.ElementName + "Text").value;
+		box.Element.firstChild.innerHTML = dojo.byId(this.ElementName + "Text").value;
 		this.AfterUpdate(box);
 	}
 
@@ -562,8 +581,22 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 	this.Init = function(box) {
 		box.GradientDirection = -1;
 		box.GradientFromColor = "#3333FF";
+		box.GradientFromPosition = 0;
 		box.GradientToColor = "#FFFF33";
+		box.GradientToPosition = 100;
 		box.GradientSet = "";
+	}
+	
+	function percentToScale(percent) {
+		if (percent==100)
+			return "1.0";
+		else if (percent<10)
+			return "0.0" + percent;
+		
+		var str = "0." + percent;
+		if (str.substring(str.length-1, str.length)=="0")
+			str = str.substring(0, str.length-1);
+		return str;
 	}
 	
 	this.Update = function(isCodeUpdate) {
@@ -573,33 +606,52 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 		if (dir.selectedIndex > 0) {
 			var set;
 			var fromColor = dojo.byId(this.ElementName + "FromColorText").value;
+			var fromPosition = parseInt(dojo.byId(this.ElementName + "FromPositionText").value);
+			if (isNaN(fromPosition) || fromPosition<0 || fromPosition>100)
+				fromPosition = 0;
 			var toColor = dojo.byId(this.ElementName + "ToColorText").value;
+			var toPosition = parseInt(dojo.byId(this.ElementName + "ToPositionText").value);
+			if (isNaN(toPosition) || toPosition<0 || toPosition>100)
+				toPosition = 100;
 			box.GradientFromColor = fromColor;
+			box.GradientFromPosition = fromPosition;
 			box.GradientToColor = toColor;
+			box.GradientToPosition = toPosition;
+			
+			var mozFrom = fromColor, mozTo = toColor;
+			if (fromPosition!=0)
+				mozFrom += " " + fromPosition + "%";
+			if (toPosition!=100)
+				mozTo += " " + toPosition + "%";
+			var mozColors = mozFrom + ", " + mozTo;
+			
+			var webkitColors = "color-stop(" + percentToScale(fromPosition) + ", " + fromColor + 
+				"), color-stop(" + percentToScale(toPosition) + ", " + toColor + ")";
+			
 			switch (dir.selectedIndex) {
 			case 1:
-				box.Element.style.backgroundImage = "-moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
-				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
-				set = "background-image: -moz-linear-gradient(left, " + fromColor + ", " + toColor + ")";
-				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, right top, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				box.Element.style.backgroundImage = "-moz-linear-gradient(left, " + mozColors + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right top, " + webkitColors + ")";
+				set = "background-image: -moz-linear-gradient(left, " + mozColors + ")";
+				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, right top, " + webkitColors + ")";
 				break;
 			case 2:
-				box.Element.style.backgroundImage = "-moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
-				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
-				set = "background-image: -moz-linear-gradient(top, " + fromColor + ", " + toColor + ")";
-				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				box.Element.style.backgroundImage = "-moz-linear-gradient(top, " + mozColors + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, left bottom, " + webkitColors + ")";
+				set = "background-image: -moz-linear-gradient(top, " + mozColors + ")";
+				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, left bottom, " + webkitColors + ")";
 				break;
 			case 3:
-				box.Element.style.backgroundImage = "-moz-linear-gradient(-45deg, " + fromColor + ", " + toColor + ")";
-				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
-				set = "background-image: -moz-linear-gradient(-45deg, " + fromColor + ", " + toColor + ")";
-				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, right bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				box.Element.style.backgroundImage = "-moz-linear-gradient(-45deg, " + mozColors + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, left top, right bottom, " + webkitColors + ")";
+				set = "background-image: -moz-linear-gradient(-45deg, " + mozColors + ")";
+				set += ";\r\nbackground-image: -webkit-gradient(linear, left top, right bottom, " + webkitColors + ")";
 				break;
 			case 4:
-				box.Element.style.backgroundImage = "-moz-linear-gradient(225deg, " + fromColor + ", " + toColor + ")";
-				box.Element.style.backgroundImage = "-webkit-gradient(linear, right top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
-				set = "background-image: -moz-linear-gradient(225deg, " + fromColor + ", " + toColor + ")";
-				set += ";\r\nbackground-image: -webkit-gradient(linear, right top, left bottom, color-stop(0.0, " + fromColor + "), color-stop(1.0, " + toColor + "))";
+				box.Element.style.backgroundImage = "-moz-linear-gradient(225deg, " + mozColors + ")";
+				box.Element.style.backgroundImage = "-webkit-gradient(linear, right top, left bottom, " + webkitColors +")";
+				set = "background-image: -moz-linear-gradient(225deg, " + mozColors + ")";
+				set += ";\r\nbackground-image: -webkit-gradient(linear, right top, left bottom, " + webkitColors + ")";
 				break;
 			}
 			box.GradientSet = set;
@@ -615,8 +667,10 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 		dojo.byId(this.ElementName + "Direction").selectedIndex = box.GradientDirection;
 		dojo.byId(this.ElementName + "FromColorText").value = box.GradientFromColor;
 		this.FromColorPalette.attr("value", box.GradientFromColor);
+		this.FromPositionSlider.attr("value", box.GradientFromPosition);
 		dojo.byId(this.ElementName + "ToColorText").value = box.GradientToColor;
 		this.ToColorPalette.attr("value", box.GradientToColor);
+		this.ToPositionSlider.attr("value", box.GradientToPosition);
 	}
 	
 	this.ToStyle = function(box) {
@@ -634,7 +688,9 @@ function GradientBackgroundSetting(elementName, getUpdateBoxDelegate, afterUpdat
 
 	var me = this;
 	this.FromColorPalette = setupColorPalette(elementName + "FromColor", function() { me.Update(); }, function() { me.ForceDirection(); });
+	this.FromPositionSlider = setupSlider(elementName + "FromPosition", 0, 100, function() { me.Update(); });
 	this.ToColorPalette = setupColorPalette(elementName + "ToColor", function() { me.Update(); }, function() { me.ForceDirection(); });
+	this.ToPositionSlider = setupSlider(elementName + "ToPosition", 0, 100, function() { me.Update(); });
 	dojo.byId(elementName + "Direction").onchange = function() { me.Update(); };
 }
 
@@ -706,6 +762,87 @@ function OutlineSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) 
 	this.ColorPalette = setupColorPalette(elementName + "Color", function() { me.Update(); });
 }
 
+function ColumnSetting(elementName, getUpdateBoxDelegate, afterUpdateDelegate) {
+	this.ElementName = elementName;
+	this.GetUpdateBox = getUpdateBoxDelegate;
+	this.AfterUpdate = afterUpdateDelegate;
+	
+	this.Init = function(box) {
+		box.ColumnCount = 1;
+		box.ColumnGap = 5;
+		box.ColumnRuleWidth = 0;
+		box.ColumnRuleColor = "#000000";
+		box.ColumnSet = "";
+	}
+	
+	this.Update = function() {
+		var box = this.GetUpdateBox();
+		var columnCount = parseInt(dojo.byId(this.ElementName + "CountText").value);
+		if (columnCount>1) {
+			var set = columnCount;
+			box.ColumnSet = SetStyleForAll(box, "column-count", set);
+			box.ColumnCount = columnCount;
+			
+			var columnGapString = dojo.byId(this.ElementName + "GapText").value;
+			var columnGap = parseInt(columnGapString);
+			if (columnGapString.length > 0 && !isNaN(columnGap)) {
+				set = columnGap + "px";
+				box.ColumnSet += ";\r\n" + SetStyleForAll(box, "column-gap", set);
+				box.ColumnGap = columnGap;
+			}
+			else {
+				SetStyleForAll(box, "column-gap", "");
+				box.ColumnGap = "";
+			}
+			
+			var ruleWidth = parseInt(dojo.byId(this.ElementName + "RuleWidthText").value);
+			if (ruleWidth!=0 && !isNaN(ruleWidth)) {
+				var ruleColor = dojo.byId(this.ElementName + "RuleColorText").value;
+				set = ruleWidth + "px solid " + ruleColor;
+				box.ColumnSet += ";\r\n" + SetStyleForAll(box, "column-rule", set);
+				box.ColumnRuleWidth = ruleWidth;
+				box.ColumnRuleColor = ruleColor;
+			}
+			else {
+				SetStyleForAll(box, "column-rule", "");
+				box.ColumnRuleWidth = 0;
+			}
+		}
+		else {
+			SetStyleForAll(box, "column-count", "");
+			SetStyleForAll(box, "column-gap", "");
+			SetStyleForAll(box, "column-rule", "");
+			box.ColumnSet = "";
+			box.ColumnCount = 1;
+		}
+		this.AfterUpdate(box);
+	}
+	
+	this.Set = function(box) {
+		dojo.byId(this.ElementName + "CountText").value = box.ColumnCount;
+		this.CountSlider.attr("value", box.ColumnCount);
+		dojo.byId(this.ElementName + "GapText").value = box.ColumnGap;
+		this.GapSlider.attr("value", box.ColumnGap);
+		dojo.byId(this.ElementName + "RuleWidthText").value = box.ColumnRuleWidth;
+		this.RuleWidthSlider.attr("value", box.ColumnRuleWidth);
+		dojo.byId(this.ElementName + "RuleColorText").value = box.ColumnRuleColor;
+		this.RuleColorPalette.attr("value", box.ColumnRuleColor);
+	}
+	
+	this.ToStyle = function(box) {
+		if (box.ColumnSet.length > 0)
+			return box.ColumnSet + ";\r\n";
+		else
+			return "";
+	}
+
+	var me = this;
+	this.CountSlider = setupSlider(elementName + "Count", 1, 10, function() { me.Update(); });
+	this.GapSlider = setupSlider(elementName + "Gap", 0, 50, function() { me.Update(); });
+	this.RuleWidthSlider = setupSlider(elementName + "RuleWidth", 0, 50, function() { me.Update(); });
+	this.RuleColorPalette = setupColorPalette(elementName + "RuleColor", function() { me.Update(); });
+}
+
 function Box() {
 	var me = this;
 	
@@ -715,7 +852,7 @@ function Box() {
 	
 	var div = document.createElement("DIV");
 	div.id = "current" + boxUniqueId;
-	div.innerHTML = this.Content;
+	div.innerHTML = "<div>" + this.Content + "</div>";
 	div.style.position = "absolute";
 	if (current==null) {
 		div.style.left = "100px";
@@ -729,7 +866,8 @@ function Box() {
 		div.style.width = current.Element.style.width;
 		div.style.height = current.Element.style.height;
 	}
-	div.style.cursor = "move";
+	div.className = "box";
+	//div.style.cursor = "move";
 	dojo.query(div).connect("onmousedown", function() {
 		if (current != me) {
 			current = me;
@@ -757,16 +895,19 @@ function Box() {
 	resize.onResize = function(ev) {
 		OutputSource();
 	};
-	var resizeDiv = div.childNodes[div.childNodes.length-1];
-	resizeDiv.style.visibility = "hidden";
-	dojo.connect(this.Element, "onmouseover", function() { 
-		var resizeDiv = div.childNodes[div.childNodes.length-1];
-		resizeDiv.style.visibility = "visible";
-	});
-	dojo.connect(this.Element, "onmouseout", function() { 
+	
+	if (!hasTouchSupport) {
 		var resizeDiv = div.childNodes[div.childNodes.length-1];
 		resizeDiv.style.visibility = "hidden";
-	});
+		dojo.connect(this.Element, "onmouseover", function() { 
+			var resizeDiv = div.childNodes[div.childNodes.length-1];
+			resizeDiv.style.visibility = "visible";
+		});
+		dojo.connect(this.Element, "onmouseout", function() { 
+			var resizeDiv = div.childNodes[div.childNodes.length-1];
+			resizeDiv.style.visibility = "hidden";
+		});
+	}
 }
 
 function setupSlider(baseName, minValue, maxValue, updateFunc) {
